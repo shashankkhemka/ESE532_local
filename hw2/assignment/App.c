@@ -1,6 +1,7 @@
 #include "App.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "stopwatch.h"
 
 #define DATA_SIZE (12000 * 8000)
 #define STAGES (4)
@@ -50,10 +51,29 @@ int main()
       Exit_with_error();
   }
   Load_data();
+
+  std::chrono::time_point<std::chrono::high_resolution_clock> start_time, end_time;
+
+  start_time = std::chrono::high_resolution_clock::now();
   Scale(Data[0], Data[1]);
+  end_time = std::chrono::high_resolution_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time-start_time).count();   
+  printf("elapsed time for Scale: %lu ns.\n", elapsed);
+
   Filter(Data[1], Data[2]);
+
+  start_time = std::chrono::high_resolution_clock::now();
   Differentiate(Data[2], Data[3]);
+  end_time = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time-start_time).count();   
+  printf("elapsed time for Differentiate: %lu ns.\n", elapsed);
+
+  start_time = std::chrono::high_resolution_clock::now();
   int Size = Compress(Data[3], Data[4]);
+  end_time = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time-start_time).count();   
+  printf("elapsed time for Compress: %lu ns.\n", elapsed);
+  
   Store_data("Output.bin", 4, Size);
 
   for (int i = 0; i <= STAGES; i++)
@@ -63,5 +83,3 @@ int main()
 
   return EXIT_SUCCESS;
 }
-
-

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include "stopwatch.h"
 
 #define WIN_SIZE 16
 #define PRIME 3
@@ -11,12 +12,22 @@
 uint64_t hash_func(unsigned char *input, unsigned int pos)
 {
 	// put your hash function implementation here
+	uint64_t hash = 0;
+
+	for (unsigned int i = 0; i < WIN_SIZE; i++) {
+		hash += int(input[pos + WIN_SIZE - 1 - i]) * pow(PRIME, i + 1);
+	}
+	return hash;
 }
 
 void cdc(unsigned char *buff, unsigned int buff_size)
 {
 	// put your cdc implementation here
-
+	for (unsigned int i = WIN_SIZE; i < (buff_size - WIN_SIZE); i++) {
+		if((hash_func(buff, i) % MODULUS) == TARGET) {
+			printf("%u\n", i);
+		}
+	}
 }
 
 void test_cdc( const char* file )
@@ -49,6 +60,13 @@ void test_cdc( const char* file )
 
 int main()
 {
-	test_cdc("prince.txt");
+	stopwatch timer;
+
+	timer.start();
+	test_cdc("prince.txt");	
+	timer.stop();
+
+	printf("Latency of cdc function: %lf ns.\n", timer.latency());
+	
 	return 0;
 }

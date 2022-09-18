@@ -17,39 +17,39 @@ Filter_horizontal:
 .L2:
     mov x8, 61354                   ; x8 = 61354
     mov x9, x0                      ; x9 = (Input + Y*INPUT_WIDTH + X), where Y = 0, X = 0.
-    movk    x8, 0x16d, lsl 16       ; x8 = x8 + 365 = 23981994 = INPUT_HEIGHT*(1 + OUTPUT_WIDTH)
+    movk    x8, 0x16d, lsl 16       ; x8 = x8 + 365 = 23981994 = OUTPUT_WIDTH*(1 + INPUT_HEIGHT)
     mov x0, 5994                    ; x0 = OUTPUT_WIDTH
     adrp    x5, .LANCHOR0           ; x5 = Coefficients address (part 1)
     add x7, x1, x0                  ; x7 = (Output + (Y+1)*OUTPUT_WIDTH + X), where Y = 0, X = 0.
     mov x10, x0                     ; x10 = OUTPUT_WIDTH
-    add x8, x1, x8                  ; x8 = Output + INPUT_HEIGHT*(1 + OUTPUT_WIDTH)
+    add x8, x1, x8                  ; x8 = Output + OUTPUT_WIDTH*(1 + INPUT_HEIGHT)
     add x5, x5, :lo12:.LANCHOR0     ; x5 = Coefficients address (part 2)
     mov x12, -5994                  ; x12 = -OUTPUT_WIDTH
     mov x11, 6000                   ; x11 = INPUT_WIDTH
 .L3:
-    add x6, x7, x12                 ; Begin annotating here, adding the instructions and your descriptions to the table.
-    mov x4, x9                      
+    add x6, x7, x12                 ; x6 = Output
+    mov x4, x9                      ; x4 = Input
     .p2align 3,,7
 .L7:
-    mov x0, 0                       
-    mov w1, 0                       
+    mov x0, 0                       ; Initialise loop 3 iterator (i = 0)
+    mov w1, 0                       ; Initialise (Sum = 0)
     .p2align 3,,7
 .L4:
-    ldrb    w3, [x4, x0]            
-    ldr w2, [x5, x0, lsl 2]         
-    add x0, x0, 1                   
-    cmp x0, 7                       
-    madd    w1, w3, w2, w1          
-    bne .L4                         
-    lsr w1, w1, 8                   
-    strb    w1, [x6], 1             
-    add x4, x4, 1                   
-    cmp x7, x6                      
-    bne .L7                         
-    add x7, x7, x10                 
-    add x9, x9, x11                 
-    cmp x7, x8                      
-    bne .L3                         ; Stop annotating here. Include this instruction in the table.
+    ldrb    w3, [x4, x0]            ; Load 8-bit 0 extended (Input)
+    ldr w2, [x5, x0, lsl 2]         ; Load from address (Coefficients = [x5 + (x0 << 2)])
+    add x0, x0, 1                   ; Increment i for loop 3
+    cmp x0, 7                       ; Check condition for loop 3 (i < 7)
+    madd    w1, w3, w2, w1          ; Multiply add Sum += Coefficients * Input
+    bne .L4                         ; Next Iteration loop 3
+    lsr w1, w1, 8                   ; Logical Shift right Sum by 8 bits
+    strb    w1, [x6], 1             ; Store result at next location in Output, x6 also increments
+    add x4, x4, 1                   ; Increment input by 1 in loop 2
+    cmp x7, x6                      ; Check condition for loop 2 (Output < Output + OUTPUT_WIDTH)
+    bne .L7                         ; Next iteration loop 2
+    add x7, x7, x10                 ; Increment output by output width when iterationg loop 1
+    add x9, x9, x11                 ; Increment input by input width while itearting loop 1
+    cmp x7, x8                      ; Check condition (x7 < x8)
+    bne .L3                         ; Next iteration loop 1
     ret                             
     .cfi_endproc
 .LFE22:
