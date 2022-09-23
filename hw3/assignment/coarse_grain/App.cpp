@@ -2,6 +2,8 @@
 
 #define STAGES (4)
 
+#define HEIGHT (264)
+
 int main()
 {
   unsigned char *Input_data = (unsigned char *)malloc(FRAMES * FRAME_SIZE);
@@ -28,7 +30,7 @@ int main()
   total_time.start();
   for (int Frame = 0; Frame < FRAMES; Frame++)
   {
-    std::vector<std::thread> ths;
+    std::vector<std::thread> ths, thx;
     ths.push_back(std::thread(&Scale_coarse, Input_data + Frame * FRAME_SIZE, Temp_data[0], 0, INPUT_HEIGHT_SCALE / 2));
     ths.push_back(std::thread(&Scale_coarse, Input_data + Frame * FRAME_SIZE, Temp_data[0], INPUT_HEIGHT_SCALE / 2, INPUT_HEIGHT_SCALE));
 
@@ -40,8 +42,19 @@ int main()
       th.join();
     }
 
-    Filter(Temp_data[0], Temp_data[1]);
-    Differentiate(Temp_data[1], Temp_data[2]);
+    Filter_coarse(Temp_data[0], Temp_data[1]);
+
+    thx.push_back(std::thread(&Differentiate_coarse, Temp_data[1], Temp_data[2], 0, HEIGHT / 2));
+    thx.push_back(std::thread(&Differentiate_coarse, Temp_data[1], Temp_data[2], HEIGHT / 2, HEIGHT));
+
+    pin_thread_to_cpu(thx[0], 0);
+    pin_thread_to_cpu(thx[1], 1);
+
+    for (auto &th : thx)
+    {
+      th.join();
+    }
+    
     Size = Compress(Temp_data[2], Output_data);
   }
   total_time.stop();
